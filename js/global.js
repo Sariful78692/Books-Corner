@@ -1,5 +1,22 @@
 // Global API URL for Google Sheets
-const scriptURL = "https://script.google.com/macros/s/AKfycbyR2rv5DLseQES4jxpO0FmsvnsooyVNGYs74gColSf8E7Fkj33w9cZlhhQQAuRviMLq/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbw3UOQMS9zjhch1ILsrl4YFWERx21pLmkT0wgvWtPNTPQsKOICz8acLFLnEMln5YDEd/exec";
+
+// Save master data to the same Google Sheet backend used by the transactions.
+// localStorage remains the offline cache, so the UI still works if the network is down.
+function saveMasterData(sheetName, value) {
+    if (typeof scriptURL === "undefined" || !scriptURL) return Promise.resolve(false);
+    return fetch(scriptURL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheetName, rowData: [value] })
+    }).then(() => true).catch(() => false);
+}
+
+function deleteMasterData(sheetName, value) {
+    if (typeof scriptURL === "undefined" || !scriptURL) return Promise.resolve(false);
+    return fetch(scriptURL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete_master", sheetName: sheetName, value: value }) }).then(() => true).catch(() => false);
+}
 
 function syncCloudData() {
     if (typeof scriptURL === 'undefined' || !scriptURL) return Promise.resolve(false);
@@ -7,8 +24,43 @@ function syncCloudData() {
         .then(response => response.json())
         .then(data => {
             if (!data) return false;
+            // Master sheets may be returned using their sheet names.
+            if (Array.isArray(data.Publishers)) data.bookPublishers = data.Publishers.map(row => Array.isArray(row) ? row[0] : (row.name || row.publisher || row.value || row));
+            if (Array.isArray(data.Classes)) data.schoolClasses = data.Classes.map(row => Array.isArray(row) ? row[0] : (row.name || row.className || row.value || row));
             Object.keys(data).forEach(key => {
-                if (Array.isArray(data[key])) localStorage.setItem(key, JSON.stringify(data[key]));
+                if (!Array.isArray(data[key])) return;
+
+                if (key === "bookPublishers" || key === "schoolClasses") {
+                    data[key] = data[key].map(item => {
+                        if (typeof item === "string") return item.trim();
+                        if (Array.isArray(item)) return String(item[0] || "").trim();
+                        return String(item.name || item.publisher || item.className || item.value || "").trim();
+                    }).filter(Boolean);
+                    const deletedKey = key === "bookPublishers" ? "deletedPublishers" : "deletedClasses";
+                    const deleted = JSON.parse(localStorage.getItem(deletedKey) || "[]");
+                    data[key] = data[key].filter(item => !deleted.some(name => name.toLowerCase() === item.toLowerCase()));
+                }
+
+                // Never discard items created locally when the cloud copy is older.
+                // These lists are maintained by the UI and must survive every sync.
+                const persistentListKeys = ["bookPublishers", "schoolClasses", "classBooksMapping"];
+                if (persistentListKeys.includes(key)) {
+                    let local = [];
+                    try { local = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) { local = []; }
+                    const merged = [...data[key], ...local];
+                    const seen = new Set();
+                    const unique = merged.filter(item => {
+                        const identity = typeof item === "object"
+                            ? JSON.stringify(item)
+                            : String(item).trim().toLowerCase();
+                        if (seen.has(identity)) return false;
+                        seen.add(identity);
+                        return true;
+                    });
+                    localStorage.setItem(key, JSON.stringify(unique));
+                } else {
+                    localStorage.setItem(key, JSON.stringify(data[key]));
+                }
             });
             return true;
         });
@@ -48,7 +100,10 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
     
-    loadSidebarPublishers();
+    // Load database publishers before building the sidebar menu.
+    syncCloudData()
+        .catch(error => console.warn("Sidebar publisher sync failed; using saved publishers", error))
+        .finally(loadSidebarPublishers);
 
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) logoutBtn.addEventListener("click", function() {

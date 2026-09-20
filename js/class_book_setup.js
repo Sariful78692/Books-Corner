@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function() {
     const classSelect = document.getElementById("classSelect");
     const addClassBtn = document.getElementById("addClassBtn");
+    const editClassBtn = document.getElementById("editClassBtn");
+    const deleteClassBtn = document.getElementById("deleteClassBtn");
     const bookListSection = document.getElementById("bookListSection");
     const bookListBody = document.getElementById("bookListBody");
     const displayClassName = document.getElementById("displayClassName");
@@ -9,6 +11,15 @@ document.addEventListener("DOMContentLoaded", function() {
     // ১. ক্লাস লোড করা
     function loadClasses() {
         let savedClasses = JSON.parse(localStorage.getItem("schoolClasses")) || ["Class V", "Class VI", "Class VII", "Class VIII", "Class IX", "Class X"];
+        savedClasses = savedClasses.map(cls => typeof cls === "string" ? cls.trim() : (cls.name || cls.className || cls.value || "").toString().trim()).filter(Boolean);
+        const uniqueClasses = [];
+        const classKeys = new Set();
+        savedClasses.forEach(cls => {
+            const key = cls.toLowerCase();
+            if (!classKeys.has(key)) { classKeys.add(key); uniqueClasses.push(cls); }
+        });
+        savedClasses = uniqueClasses;
+        localStorage.setItem("schoolClasses", JSON.stringify(savedClasses));
         localStorage.setItem("schoolClasses", JSON.stringify(savedClasses)); // Default save
         
         classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
@@ -31,9 +42,13 @@ document.addEventListener("DOMContentLoaded", function() {
         let newClass = prompt("Enter New Class Name (e.g. Class XI):");
         if (newClass && newClass.trim() !== "") {
             let savedClasses = JSON.parse(localStorage.getItem("schoolClasses")) || [];
-            if (!savedClasses.includes(newClass.trim())) {
+            if (!savedClasses.some(cls => cls.toLowerCase() === newClass.trim().toLowerCase())) {
                 savedClasses.push(newClass.trim());
+                let deleted = JSON.parse(localStorage.getItem("deletedClasses") || "[]");
+                deleted = deleted.filter(name => name.toLowerCase() !== newClass.trim().toLowerCase());
+                localStorage.setItem("deletedClasses", JSON.stringify(deleted));
                 localStorage.setItem("schoolClasses", JSON.stringify(savedClasses));
+                saveMasterData("Classes", newClass.trim());
                 loadClasses();
                 classSelect.value = newClass.trim();
                 classSelect.dispatchEvent(new Event('change'));
@@ -42,6 +57,38 @@ document.addEventListener("DOMContentLoaded", function() {
                 alert("This class already exists!");
             }
         }
+    });
+
+    editClassBtn.addEventListener("click", function() {
+        const oldName = classSelect.value;
+        if (!oldName) return alert("Please select a class first.");
+        const newName = prompt("Edit Class Name:", oldName);
+        if (!newName || !newName.trim() || newName.trim() === oldName) return;
+        let classes = JSON.parse(localStorage.getItem("schoolClasses")) || [];
+        if (classes.includes(newName.trim())) return alert("This class already exists!");
+        classes[classes.indexOf(oldName)] = newName.trim();
+        localStorage.setItem("schoolClasses", JSON.stringify(classes));
+        let deleted = JSON.parse(localStorage.getItem("deletedClasses") || "[]");
+        if (!deleted.some(name => name.toLowerCase() === className.toLowerCase())) deleted.push(className);
+        localStorage.setItem("deletedClasses", JSON.stringify(deleted));
+        deleteMasterData("Classes", oldName).then(() => saveMasterData("Classes", newName.trim()));
+        loadClasses();
+        classSelect.value = newName.trim();
+        classSelect.dispatchEvent(new Event("change"));
+    });
+
+    deleteClassBtn.addEventListener("click", function() {
+        const className = classSelect.value;
+        if (!className) return alert("Please select a class first.");
+        if (!confirm(`Delete '${className}' and its assigned books?`)) return;
+        let classes = JSON.parse(localStorage.getItem("schoolClasses")) || [];
+        localStorage.setItem("schoolClasses", JSON.stringify(classes.filter(cls => cls !== className)));
+        let mappings = JSON.parse(localStorage.getItem("classBooksMapping")) || [];
+        localStorage.setItem("classBooksMapping", JSON.stringify(mappings.filter(m => m.className !== className)));
+        deleteMasterData("Classes", className);
+        fetch(scriptURL, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"delete_class", sheetName:"ClassBooks", className:className}) });
+        loadClasses();
+        bookListSection.style.display = "none";
     });
 
     // ৩. ক্লাস সিলেক্ট করলে বইয়ের লিস্ট আসা

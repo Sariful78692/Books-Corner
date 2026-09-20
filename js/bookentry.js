@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!publisherSelect) return;
         
         let savedPublishers = JSON.parse(localStorage.getItem("bookPublishers")) || ["Anupam Prokashani"];
+        savedPublishers = savedPublishers.map(pub => typeof pub === "string" ? pub : (pub.name || pub.publisher || pub.value || "")).filter(Boolean);
+        localStorage.setItem("bookPublishers", JSON.stringify(savedPublishers));
         publisherSelect.innerHTML = '<option value="">Select Publisher</option>';
         savedPublishers.forEach(pub => {
             const option = document.createElement("option");
@@ -24,16 +26,25 @@ document.addEventListener("DOMContentLoaded", function() {
             window.parent.loadSidebarPublishers();
         }
     }
-    loadPublishers();
+    // Always refresh the publisher list from the database first, then render it.
+    // localStorage remains available as an offline fallback inside syncCloudData.
+    syncCloudData()
+        .catch(error => console.warn("Publisher sync failed; using saved publishers", error))
+        .finally(loadPublishers);
 
     if (addPublisherBtn) {
         addPublisherBtn.addEventListener("click", function() {
             const newPublisher = prompt("Enter New Publisher Name:");
             if (newPublisher && newPublisher.trim() !== "") {
                 let savedPublishers = JSON.parse(localStorage.getItem("bookPublishers")) || [];
+                savedPublishers = savedPublishers.map(pub => typeof pub === "string" ? pub : (pub.name || pub.publisher || pub.value || "")).filter(Boolean);
                 if (!savedPublishers.includes(newPublisher.trim())) {
                     savedPublishers.push(newPublisher.trim());
+                    let deleted = JSON.parse(localStorage.getItem("deletedPublishers") || "[]");
+                    deleted = deleted.filter(name => name.toLowerCase() !== newPublisher.trim().toLowerCase());
+                    localStorage.setItem("deletedPublishers", JSON.stringify(deleted));
                     localStorage.setItem("bookPublishers", JSON.stringify(savedPublishers));
+                    saveMasterData("Publishers", newPublisher.trim());
                     loadPublishers(); 
                     publisherSelect.value = newPublisher.trim(); 
                     alert("Publisher Added!");
@@ -56,6 +67,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (index > -1) {
                     savedPublishers[index] = newName.trim();
                     localStorage.setItem("bookPublishers", JSON.stringify(savedPublishers));
+                    deleteMasterData("Publishers", selectedPub).then(() => saveMasterData("Publishers", newName.trim()));
                     loadPublishers();
                     publisherSelect.value = newName.trim();
                     alert("Publisher Updated!");
@@ -73,6 +85,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 let savedPublishers = JSON.parse(localStorage.getItem("bookPublishers")) || [];
                 savedPublishers = savedPublishers.filter(pub => pub !== selectedPub);
                 localStorage.setItem("bookPublishers", JSON.stringify(savedPublishers));
+                let deleted = JSON.parse(localStorage.getItem("deletedPublishers") || "[]");
+                if (!deleted.some(name => name.toLowerCase() === selectedPub.toLowerCase())) deleted.push(selectedPub);
+                localStorage.setItem("deletedPublishers", JSON.stringify(deleted));
+                deleteMasterData("Publishers", selectedPub);
                 loadPublishers();
                 alert("Publisher Deleted!");
             }
