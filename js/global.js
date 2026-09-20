@@ -1,5 +1,5 @@
 // Global API URL for Google Sheets
-const scriptURL = "https://script.google.com/macros/s/AKfycbw3UOQMS9zjhch1ILsrl4YFWERx21pLmkT0wgvWtPNTPQsKOICz8acLFLnEMln5YDEd/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycby0bbJvp-ALa7lFwSbEFD6wF5UTOq3MTlM_T4FoXnfmpA1rVlIvtuyAwa4ki1Y91Ctx/exec";
 
 // Save master data to the same Google Sheet backend used by the transactions.
 // localStorage remains the offline cache, so the UI still works if the network is down.
@@ -20,7 +20,12 @@ function deleteMasterData(sheetName, value) {
 
 function syncCloudData() {
     if (typeof scriptURL === 'undefined' || !scriptURL) return Promise.resolve(false);
-    return fetch(scriptURL + "?action=sync", { cache: "no-store" })
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    return fetch(scriptURL + "?action=sync&_=" + Date.now(), {
+        cache: "no-store",
+        signal: controller.signal
+    })
         .then(response => response.json())
         .then(data => {
             if (!data) return false;
@@ -63,7 +68,8 @@ function syncCloudData() {
                 }
             });
             return true;
-        });
+        })
+        .finally(() => clearTimeout(timeout));
 }
 
 function getActivePublishers() {

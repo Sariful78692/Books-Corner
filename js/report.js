@@ -1,6 +1,29 @@
 document.addEventListener("DOMContentLoaded", function() {
     const fromDateInput = document.getElementById("reportFromDate");
     const toDateInput = document.getElementById("reportToDate");
+    const studentSearchInput = document.getElementById("reportStudentSearch");
+    const studentSearchSummary = document.getElementById("studentSearchSummary");
+    function applyStudentSearch() {
+        const query = (studentSearchInput.value || "").trim().toLowerCase();
+        let takenBooks = 0, missedBooks = 0, totalAmount = 0;
+        document.querySelectorAll("#salesTableBody tr, #dueTableBody tr, #missedTableBody tr").forEach(row => {
+            const matches = !query || row.textContent.toLowerCase().includes(query);
+            row.style.display = matches ? "" : "none";
+            if (matches && row.closest("#salesTableBody")) {
+                const books = row.cells[4] ? row.cells[4].textContent.split(",").filter(Boolean) : [];
+                takenBooks += books.length;
+                totalAmount += parseFloat((row.cells[6]?.textContent || "").replace(/[^0-9.-]/g, "")) || 0;
+            }
+            if (matches && row.closest("#missedTableBody")) {
+                missedBooks += row.querySelectorAll(".badge-danger").length;
+            }
+        });
+        studentSearchSummary.textContent = query
+            ? `Taken: ${takenBooks} | Missed: ${missedBooks} | Bill: ₹${totalAmount.toFixed(2)}`
+            : "";
+    }
+    studentSearchInput.addEventListener("input", applyStudentSearch);
+    studentSearchInput.addEventListener("keyup", applyStudentSearch);
 
     function inDateRange(value) {
         const date = String(value || "").slice(0, 10);
@@ -17,14 +40,19 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     // লোড ডেটা ফ্রম লোকাল স্টোরেজ
-    syncCloudData().catch(error => console.warn("Report sync failed; using cached data", error))
-        .finally(generateReports);
+    // Render cached data immediately. Cloud sync runs in the background so a
+    // slow Google Apps Script response cannot keep the report blank/stuck.
+    generateReports();
+    syncCloudData()
+        .then(() => generateReports())
+        .catch(error => console.warn("Report sync failed; using cached data", error));
 
     function generateReports() {
         const savedReceived = JSON.parse(localStorage.getItem("bookReceived")) || [];
         const savedReturn = JSON.parse(localStorage.getItem("bookReturn")) || [];
         const savedSales = JSON.parse(localStorage.getItem("bookSales")) || [];
-        processSalesAndDues(savedSales.filter(item => inDateRange(item.date)));
+        const savedMissedBooks = JSON.parse(localStorage.getItem("missedBooks")) || [];
+        processSalesAndDues(savedSales.filter(item => inDateRange(item.date)), savedMissedBooks.filter(item => inDateRange(item.date)));
         processStockInventory(
             savedReceived.filter(item => inDateRange(item.date)),
             savedReturn.filter(item => inDateRange(item.date)),
@@ -35,8 +63,14 @@ document.addEventListener("DOMContentLoaded", function() {
     // ==========================================
     // 1. Sales History, Due List & Missed Books Logic
     // ==========================================
-    function processSalesAndDues(salesData) {
+    function processSalesAndDues(salesData, missedBookData) {
         let invoiceMap = new Map();
+        const receivedBooks = JSON.parse(localStorage.getItem("bookReceived")) || [];
+        function getPublisher(bookName, writer, part) {
+            const match = receivedBooks.find(book => book.bookName === bookName &&
+                (book.writer || "-") === (writer || "-") && (book.part || "-") === (part || "-"));
+            return match ? (match.publisher || "-") : "-";
+        }
         let totalSales = 0;
         let totalCollected = 0;
         let totalDue = 0;
@@ -53,10 +87,48 @@ document.addEventListener("DOMContentLoaded", function() {
                     billAmount: 0,
                     paid: parseFloat(sale.paid) || 0,
                     due: parseFloat(sale.due) || 0,
-                    missedBooks: sale.missedBooks || [] // প্রথম সারি থেকে না-নেওয়া বইয়ের লিস্ট
+                    missedBooks: []
                 });
             }
-            invoiceMap.get(inv).billAmount += parseFloat(sale.grandTotal) || 0;
+            const invoice = invoiceMap.get(inv);
+            invoice.billAmount += parseFloat(sale.grandTotal) || 0;
+            invoice.bookRows = invoice.bookRows || [];
+            invoice.bookRows.push(sale);
+        });
+
+        const classBooks = JSON.parse(localStorage.getItem("classBooksMapping")) || [];
+        invoiceMap.forEach((invoice, inv) => {
+            const invoiceRows = salesData.filter(sale => sale.invoiceNo === inv);
+            // Include later purchases by the same student/class. If a student
+            // buys a previously missed book later, it must disappear from Missed.
+            const customerSales = salesData.filter(sale =>
+                sale.customer === invoice.customer && sale.class === invoice.className
+            );
+            const soldIds = new Set(customerSales.map(sale => [sale.bookName, sale.writer || "-", sale.part || "-"].join("|")));
+            const soldNames = new Set(customerSales.map(sale => sale.bookName));
+            const assignedIds = new Set();
+            const assignedBooks = classBooks.filter(book => book.className === invoice.className)
+                .filter(book => {
+                    const id = [book.bookName, book.writer || "-", book.part || "-"].join("|");
+                    if (assignedIds.has(id)) return false;
+                    assignedIds.add(id);
+                    return true;
+                });
+            const assignedNames = new Set(assignedBooks.map(book => book.bookName));
+            // Database rows are accepted only when they are still assigned and
+            // were not sold in this invoice. This removes old/stale missed rows.
+            const databaseMissed = missedBookData
+                .filter(book => book.invoiceNo === inv && assignedNames.has(book.bookName))
+                .map(book => book.bookName)
+                .filter(bookName => !soldNames.has(bookName));
+            const calculatedMissed = assignedBooks
+                .filter(book => !soldNames.has(book.bookName) && !soldIds.has([book.bookName, book.writer || "-", book.part || "-"].join("|")))
+                .map(book => book.bookName);
+            invoice.missedBooks = [...new Set([...databaseMissed, ...calculatedMissed])];
+            invoice.bookNames = [...new Set(invoiceRows.map(book => book.bookName))].join(", ");
+            invoice.publishers = [...new Set(invoiceRows.map(book =>
+                book.publisher || getPublisher(book.bookName, book.writer, book.part)
+            ))].filter(Boolean).join(", ");
         });
 
         const salesTable = document.getElementById("salesTableBody");
@@ -88,9 +160,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     <td style="font-weight:bold; color:#2563eb;">${inv}</td>
                     <td>${data.customer}</td>
                     <td>${data.className}</td>
+                    <td>${data.bookNames || "-"}</td>
+                    <td>${data.publishers || "-"}</td>
                     <td style="font-weight:bold;">₹${data.billAmount.toFixed(2)}</td>
                     <td style="color:#059669; font-weight:bold;">₹${data.paid.toFixed(2)}</td>
-                    <td>${statusBadge}</td>
+                    <td>${statusBadge} <button type="button" class="row-print-btn" data-invoice="${inv}" style="margin-left:6px; padding:3px 7px; cursor:pointer;">Print</button></td>
                 </tr>
             `;
 
@@ -130,10 +204,38 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("sumTotalDue").textContent = "₹" + totalDue.toFixed(2);
 
         // Empty States
-        if (!hasSales) salesTable.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No sales data available.</td></tr>`;
+        if (!hasSales) salesTable.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">No sales data available.</td></tr>`;
         if (!hasDues) dueTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color:green; font-weight:bold;">Awesome! There are no pending dues.</td></tr>`;
         if (!hasMissed) missedTable.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px;">No missed books record found.</td></tr>`;
+        applyStudentSearch();
+        salesTable.querySelectorAll(".row-print-btn").forEach(button => {
+            button.addEventListener("click", () => printInvoiceCompact(button.dataset.invoice, salesData));
+        });
     }
+
+    function printInvoice(invoiceNo, salesData) {
+        const rows = salesData.filter(sale => sale.invoiceNo === invoiceNo);
+        const popup = window.open("", "_blank", "width=800,height=600");
+        if (!popup) return alert("Please allow pop-ups to print the invoice.");
+        popup.document.write(`<html><head><title>Invoice ${invoiceNo}</title><style>@page{size:A5 portrait;margin:8mm}body{font-family:Arial;font-size:11px}h2{text-align:center}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:5px;text-align:left}th{background:#eee}</style></head><body><h2>BOOK'S CORNER</h2><p>Invoice: <b>${invoiceNo}</b> &nbsp; Date: <b>${rows[0]?.date || "-"}</b></p><p>Student: <b>${rows[0]?.customer || "-"}</b> &nbsp; Class: <b>${rows[0]?.class || "-"}</b></p><table><thead><tr><th>Book</th><th>Writer</th><th>Part</th><th>Qty</th><th>Total</th></tr></thead><tbody>${rows.map(row => `<tr><td>${row.bookName}</td><td>${row.writer || "-"}</td><td>${row.part || "-"}</td><td>${row.qty}</td><td>₹${parseFloat(row.grandTotal || 0).toFixed(2)}</td></tr>`).join("")}</tbody></table><script>window.onload=()=>window.print();<\/script></body></html>`);
+        popup.document.close();
+    }
+
+    function printInvoiceCompact(invoiceNo, salesData) {
+        const rows = salesData.filter(sale => sale.invoiceNo === invoiceNo);
+        const popup = window.open("", "_blank", "width=800,height=600");
+        if (!popup) return alert("Please allow pop-ups to print the invoice.");
+        const items = rows.map(row => `<tr><td>${row.bookName}</td><td>${row.writer || "-"}</td><td>${row.part || "-"}</td><td>${row.qty}</td><td>₹${parseFloat(row.grandTotal || 0).toFixed(2)}</td></tr>`).join("");
+        popup.document.write(`<html><head><title>Invoice ${invoiceNo}</title><style>@page{size:A5 portrait;margin:7mm}body{font-family:Arial;font-size:9px;color:#000;margin:0;min-height:calc(100vh - 14mm);display:flex;flex-direction:column}.header{text-align:center;border-bottom:1px solid #000;padding-bottom:6px;margin-bottom:9px}.header h2{font-size:18px;margin:0 0 3px}.header p{font-size:8px;margin:2px 0}.info{display:flex;justify-content:space-between;font-size:9px;margin-bottom:9px}table{width:100%;border-collapse:collapse;font-size:8px}th,td{border:1px solid #000;padding:3px;text-align:left}th{background:#eee}.signature{margin-top:auto;margin-left:auto;width:145px;border-top:1px solid #000;text-align:center;padding-top:4px;font-size:9px}</style></head><body><div class="header"><h2>BOOK'S CORNER</h2><p>Run By:- Children's Corner</p><p>Address:- Vill- Sangrampur, PO- Kalikapota, PS- Usthi, Dist- South 24 Parganas, PIN- 743355</p><p>Website: www.childrenscorner.in | E-mail: childrenscorner85@gmail.com</p></div><div class="info"><div>Invoice: <b>${invoiceNo}</b><br>Student: <b>${rows[0]?.customer || "-"}</b></div><div>Date: <b>${rows[0]?.date || "-"}</b><br>Class: <b>${rows[0]?.class || "-"}</b></div></div><table><thead><tr><th>Book</th><th>Writer</th><th>Part</th><th>Qty</th><th>Total</th></tr></thead><tbody>${items}</tbody></table><div class="signature">Authorize Signature</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        popup.document.close();
+    }
+
+    // Keep the report fresh when rows are manually added/deleted in Google Sheets.
+    setInterval(() => {
+        syncCloudData()
+            .then(() => generateReports())
+            .catch(error => console.warn("Automatic report refresh failed", error));
+    }, 5000);
 
     // ==========================================
     // 2. Stock Inventory Logic

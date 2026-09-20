@@ -33,6 +33,19 @@
         .badge-danger { background-color: #fee2e2; color: #ef4444; }
         .badge-warning { background-color: #fef3c7; color: #d97706; }
         .badge-success { background-color: #d1fae5; color: #059669; }
+        @media print {
+            @page { size: A5 portrait; margin: 8mm; }
+            body { background: #fff !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+            .form-card:first-of-type, .tab-container, .row-print-btn { display: none !important; }
+            .tab-content { display: block !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; margin-bottom: 12px !important; }
+            .report-table { font-size: 9px !important; }
+            .report-table th, .report-table td { padding: 4px !important; }
+            .summary-cards { gap: 5px; }
+            .s-card { min-width: 0; padding: 8px; }
+            .s-card h3 { font-size: 9px; }
+            .s-card h2 { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -44,6 +57,8 @@
             <div class="form-group"><label for="reportToDate">To Date</label><input type="date" id="reportToDate"></div>
             <button type="button" id="applyReportDateBtn" class="btn-submit" style="padding:10px 20px;">Apply Filter</button>
             <button type="button" id="clearReportDateBtn" class="btn-secondary" style="padding:10px 20px;">Clear</button>
+            <div class="form-group" style="min-width:220px;"><label for="reportStudentSearch">Search Student Name</label><input type="search" id="reportStudentSearch" placeholder="Student Name"></div>
+            <div id="studentSearchSummary" style="font-weight:bold; color:#2563eb; min-width:260px;"></div>
         </div>
 
         <!-- Summary Cards -->
@@ -75,7 +90,7 @@
             <div class="section-title">Invoice Wise Sales History</div>
             <table class="report-table">
                 <thead>
-                    <tr><th>Date</th><th>Invoice No</th><th>Customer Name</th><th>Class</th><th>Total Bill</th><th>Paid</th><th>Status</th></tr>
+                    <tr><th>Date</th><th>Invoice No</th><th>Customer Name</th><th>Class</th><th>Book Name</th><th>Publisher</th><th>Total Bill</th><th>Paid</th><th>Status</th></tr>
                 </thead>
                 <tbody id="salesTableBody"></tbody>
             </table>
