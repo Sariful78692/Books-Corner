@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Publisher Payment Details</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <style>
+        .summary-cards { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .s-card { flex: 1; min-width: 200px; padding: 20px; border-radius: 8px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .s-card h3 { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; opacity: 0.9; }
+        .s-card h2 { margin: 0; font-size: 24px; }
+        .c-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .c-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .c-green { background: linear-gradient(135deg, #10b981, #059669); }
+        .c-dark { background: linear-gradient(135deg, #374151, #111827); }
+
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .ledger-table th, .ledger-table td { padding: 10px; border: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
+        .ledger-table th { background-color: #f3f4f6; font-weight: bold; color: #111827; }
+        .ledger-table tr:nth-child(even) { background-color: #f9fafb; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; }
+        .b-rec { background-color: #3b82f6; }
+        .b-ret { background-color: #ef4444; }
+        .b-pay { background-color: #10b981; }
+        
+        .payment-box { background-color: #ecfdf5; border: 1px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h2 class="page-title">Publisher Ledger & Payment History</h2>
+
+        <div class="form-card" style="margin-bottom: 20px;">
+            <div class="form-group" style="width: 300px;">
+                <label>Select Publisher to view Ledger</label>
+                <select id="publisherSelect" style="padding: 10px; width: 100%;">
+                    <option value="">-- Choose Publisher --</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="ledgerSection" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="s-card c-blue">
+                    <h3>Total Received (Bill)</h3>
+                    <h2 id="sumReceived">₹0.00</h2>
+                </div>
+                <div class="s-card c-red">
+                    <h3>Total Returned</h3>
+                    <h2 id="sumReturned">₹0.00</h2>
+                </div>
+                <div class="s-card c-green">
+                    <h3>Total Paid</h3>
+                    <h2 id="sumPaid">₹0.00</h2>
+                </div>
+                <div class="s-card c-dark">
+                    <h3>Current Due (পাবে)</h3>
+                    <h2 id="sumDue">₹0.00</h2>
+                </div>
+            </div>
+
+            <!-- New Payment Entry -->
+            <div class="payment-box">
+                <strong style="color: #059669; font-size: 16px;">Make New Payment:</strong>
+                <input type="date" id="payDate" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="number" id="payAmount" placeholder="Amount (₹)" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px;">
+                
+                <!-- ⚠️ FIX: ড্রপডাউন মেনু অ্যাড করা হলো -->
+                <select id="payNote" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Adjustment">Adjustment</option>
+                </select>
+
+                <button type="button" id="savePaymentBtn" class="btn-submit" style="padding: 8px 20px;">Save Payment</button>
+            </div>
+
+            <!-- Full Transaction History Table -->
+            <div class="form-card">
+                <div class="section-title" style="display:flex; justify-content:space-between; align-items:end; gap:15px; flex-wrap:wrap;">
+                    <span>Full Statement of Account</span>
+                    <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; font-family:Arial,sans-serif; font-size:12px; font-weight:normal;">
+                        <label>From <input type="date" id="ledgerFromDate" style="padding:5px;"></label>
+                        <label>To <input type="date" id="ledgerToDate" style="padding:5px;"></label>
+                        <button type="button" id="applyLedgerDateBtn" class="btn-submit" style="padding:7px 12px;">Apply</button>
+                        <button type="button" id="clearLedgerDateBtn" class="btn-secondary" style="padding:7px 12px;">Clear</button>
+                    </div>
+                </div>
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Description (Book/Note)</th>
+                            <th style="text-align: right;">Book Order (Pcs)</th>
+                            <th style="text-align: right;">Book Received (Pcs)</th>
+                            <th style="text-align: right;">Book Returned (Pcs)</th>
+                            <th style="text-align: right;">Bill Amount (+)</th>
+                            <th style="text-align: right;">Paid / Returned (-)</th>
+                            <th style="text-align: right; background-color: #fef3c7;">Balance Due</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../js/global.js"></script>
+    <script src="../js/publisher_payment.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Entry</title>
+    <link rel="stylesheet" href="../css/global.css">
+</head>
+<body>
+    <div class="main-content">
+        <h2 class="page-title">Book Entry Management</h2>
+
+        <!-- Publisher Add/Edit/Delete Section -->
+        <div class="form-card" style="margin-bottom: 20px;">
+            <div class="section-title">Manage Publishers</div>
+            <div class="form-grid" style="align-items: end;">
+                <div class="form-group">
+                    <label>Select Publisher</label>
+                    <select id="publisherName" required>
+                        <option value="">-- Choose Publisher --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <button type="button" id="addPublisherBtn" class="btn-primary">➕ Add</button>
+                    <button type="button" id="editPublisherBtn" class="btn-submit" style="background-color: #f59e0b;">✎ Edit</button>
+                    <button type="button" id="deletePublisherBtn" class="btn-reset" style="background-color: #ef4444; color: white;">🗑 Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Entry Form -->
+        <div class="form-card">
+            <div class="section-title">Enter New Book Details</div>
+            <form id="bookentryForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Date <span>*</span></label>
+                        <input type="date" id="orderDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Book Name <span>*</span></label>
+                        <input type="text" id="bookName" placeholder="Enter Book Name" required>
+                    </div>
+                    
+                    <!-- Writer Field (নতুন যুক্ত করা হয়েছে) -->
+                    <div class="form-group">
+                        <label>Writer Name</label>
+                        <input type="text" id="writerName" placeholder="Enter Writer Name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Part</label>
+                        <input type="text" id="part" placeholder="Enter Part">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Price (₹) <span>*</span></label>
+                        <input type="number" id="bookPrice" placeholder="Enter Price" min="0" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-submit">Save Book</button>
+                    <button type="reset" class="btn-reset">Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- স্ক্রিপ্ট লিংক -->
+    <script src="../js/global.js"></script>
+    <script src="../js/bookentry.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management System</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f3f4f6;
+        }
+        .main-content-wrapper {
+            flex-grow: 1;
+            height: 100vh;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Professional Sidebar -->
+    <div class="sidebar">
+        <h2>Book Management</h2>
+        <ul id="menuList">
+            <li><a href="dashboard/dashboard.html" target="contentFrame" class="active">Dashboard</a></li>
+          
+            <!-- Book Menu (Click to Toggle) -->
+            <li class="has-dropdown">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    Book <span class="arrow">&#9662;</span>
+                </a>
+                <ul class="sub-menu">
+                    <li><a href="book/bookentry.html" target="contentFrame">Book Entry</a></li>
+                    <li><a href="book/bookdetails.html" target="contentFrame">Book Details</a></li> 
+                    <li><a href="book/bookorder.html" target="contentFrame">Book Order</a></li>
+                    <li><a href="book/bookreceived.html" target="contentFrame">Book Received</a></li>
+                    <li style="border-bottom: 1px solid #334155;"><a href="book/class_book_setup.html" target="contentFrame">⭐ Class Book Setup</a></li>
+                    <li><a href="book/booksales.html" target="contentFrame">Book Sales</a></li>
+                    <li><a href="book/returnbook.html" target="contentFrame">Book Return</a></li>
+                </ul>
+            </li>
+           
+            <!-- Publisher Menu (Click to Toggle - Dynamic) -->
+            <li class="has-dropdown">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    Publisher <span class="arrow">&#9662;</span>
+                </a>
+                <ul class="sub-menu" id="publisherSubMenu">
+                    <!-- জাভাস্ক্রিপ্ট দিয়ে এখানে পাবলিশারের নামগুলো অটোমেটিক আসবে -->
+                </ul>
+            </li>
+
+            <!-- ⚠️ FIX: এখানে target="contentFrame" যোগ করা হয়েছে এবং # সরিয়ে দেওয়া হয়েছে -->
+            <li><a href="publisher/publisher_payment.html" target="contentFrame">Publisher Payment Details</a></li>
+           
+            <!-- Report Menu -->
+            <li><a href="report/report.html" target="contentFrame">Report</a></li>
+            <li class="account-actions"><a class="settings-action" href="settings.html" target="contentFrame">⚙ Settings</a><a class="logout-action" href="javascript:void(0)" id="logoutBtn">↪ Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content-wrapper">
+        <iframe name="contentFrame" src="dashboard/dashboard.html"></iframe>
+    </div>
+
+    <!-- শুধুমাত্র External JS ফাইলটি লিংক করা হলো -->
+    <script src="js/global.js"></script>
+</body>
+</html>

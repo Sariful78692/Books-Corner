@@ -1,0 +1,87 @@
+/* Dashboard Grid Layout */
+.material-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 20px;
+}
+
+/* Base Material Card */
+.material-card {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.14);
+    position: relative;
+    padding: 15px;
+    margin-top: 30px; /* Floating icon er jonno space */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Floating Icon Box */
+.card-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 3px;
+    position: absolute;
+    top: -20px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: white;
+}
+
+/* Card Colors matching the image */
+.bg-orange {
+    background: linear-gradient(60deg, #ffa726, #fb8c00);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(251, 140, 0, .4);
+}
+
+.bg-green {
+    background: linear-gradient(60deg, #66bb6a, #43a047);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(76, 175, 80, .4);
+}
+
+.bg-red {
+    background: linear-gradient(60deg, #ef5350, #e53935);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(244, 67, 54, .4);
+}
+
+.bg-blue {
+    background: linear-gradient(60deg, #26c6da, #00acc1);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(0, 188, 212, .4);
+}
+
+/* Text Alignment inside Card */
+.card-info {
+    text-align: right;
+    padding-top: 10px;
+}
+
+.card-category {
+    color: #999;
+    font-size: 14px;
+    margin: 0;
+}
+
+.card-title {
+    color: #3c4858;
+    font-size: 24px;
+    margin: 5px 0 15px 0;
+    font-weight: 300;
+}
+
+/* Divider & Footer */
+.card-footer {
+    border-top: 1px solid #eeeeee;
+    padding-top: 10px;
+    margin-top: 10px;
+    color: #999;
+    font-size: 12px;
+}
+
+.card-footer p {
+    margin: 0;
+}

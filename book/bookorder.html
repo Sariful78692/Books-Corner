@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Order List</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <style>
+        .order-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .order-table th, .order-table td { padding: 10px 12px; border: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
+        .order-table th { background-color: #f9fafb; font-weight: 600; color: #111827; }
+        .order-table tr:nth-child(even) { background-color: #f9fafb; }
+        .action-cell { display: flex; gap: 5px; }
+        .btn-sm { width: 30px; height: 30px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; color: white; }
+        .edit-btn { background-color: #f59e0b; }
+        .delete-btn { background-color: #ef4444; }
+        .modal-table input { width: 90px; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 13px; }
+        
+        /* Readonly ফিল্ডের জন্য স্টাইল */
+        .readonly-field { background-color: #f3f4f6 !important; color: #6b7280; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h2 class="page-title">Book Order Management</h2>
+
+        <div id="listView">
+            <div class="top-controls">
+                <input type="text" id="searchInput" class="search-box" placeholder="Search by Publisher or Book Name...">
+                <button id="openModalBtn" class="btn-primary">🛒 Create New Order</button>
+            </div>
+            
+            <div class="form-card">
+                <div class="section-title">All Book Orders</div>
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>Sl</th><th>Date</th><th>Publisher Name</th><th>Book Name</th><th>Writer</th><th>Part</th>
+                            <th>Qty (Pcs)</th><th>Rate</th><th>Amount</th><th>Dis %</th><th>Grand Total</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- এডিট অর্ডার ভিউ -->
+        <div id="editOrderView" class="form-card" style="display: none;">
+            <div class="section-title">Edit Order Details</div>
+            
+            <form id="editOrderForm">
+                <input type="hidden" id="editOrderIndex">
+                <input type="hidden" id="eOldDate"><input type="hidden" id="eOldPublisher">
+                <input type="hidden" id="eOldBookName"><input type="hidden" id="eOldWriter"><input type="hidden" id="eOldPart">
+                
+                <div class="form-grid">
+                    <!-- Date ফিল্ডটি এখন text এবং এডিট করা যাবে -->
+                    <div class="form-group"><label>Date <span>*</span></label><input type="date" id="eDate" required placeholder="YYYY-MM-DD"></div>
+                    
+                    <!-- এই ফিল্ডগুলো Readonly / Disabled করে দেওয়া হয়েছে -->
+                    <div class="form-group"><label>Publisher</label><select id="ePub" class="readonly-field" disabled></select></div>
+                    <div class="form-group"><label>Book Name</label><input type="text" id="eBook" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Writer</label><input type="text" id="eWriter" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Part</label><input type="text" id="ePart" class="readonly-field" readonly></div>
+                    
+                    <!-- শুধুমাত্র এই ফিল্ডগুলো এডিট করা যাবে -->
+                    <div class="form-group"><label>Qty (Pcs) <span>*</span></label><input type="number" id="eQty" min="1" required></div>
+                    <div class="form-group"><label>Rate (₹) <span>*</span></label><input type="number" id="eRate" min="0" step="0.01" required></div>
+                    <div class="form-group"><label>Discount (%)</label><input type="number" id="eDis" min="0" step="0.01" value="0"></div>
+                    <div class="form-group"><label>Amount (₹)</label><input type="number" id="eAmount" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Grand Total (₹)</label><input type="number" id="eGrand" class="readonly-field" readonly style="font-weight: bold; color: #2563eb;"></div>
+                </div>
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-submit">Update Order</button>
+                    <button type="button" class="btn-reset" id="cancelEditOrderBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Modal Popup -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content" style="max-width: 95%;">
+            <span class="close-modal" id="closeModalBtn">&times;</span>
+            <h2>Create Order</h2>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight:bold;">Select Publisher:</label>
+                <select id="modalPublisherSelect" style="padding: 8px; width: 250px; margin-left: 10px;">
+                    <!-- JS will load options -->
+                </select>
+            </div>
+
+            <table class="order-table modal-table">
+                <thead>
+                    <tr>
+                        <th style="width:5%;">Select</th><th style="width:20%;">Book Name</th><th style="width:15%;">Writer</th><th style="width:8%;">Part</th>
+                        <th style="width:12%;">Qty (Pcs)</th><th style="width:12%;">Rate</th><th style="width:10%;">Amount</th><th style="width:8%;">Dis %</th><th style="width:10%;">G. Total</th>
+                    </tr>
+                </thead>
+                <tbody id="modalBookList"></tbody>
+            </table>
+
+            <div class="modal-footer-totals">
+                <span>Total Books: <span id="totBooks">0</span></span>
+                <span>Total Amount: ₹<span id="totAmount">0.00</span></span>
+                <span>Total Discount: ₹<span id="totDiscount">0.00</span></span>
+                <span style="color:#2563eb;">Grand Total: ₹<span id="totGrand">0.00</span></span>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right;">
+                <button id="submitOrderBtn" class="btn-submit">Submit Order</button>
+                <button id="printReceiptBtn" class="btn-primary" style="display:none;">🖨️ Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/global.js"></script>
+    <script src="../js/bookorder.js"></script>
+</body>
+</html>

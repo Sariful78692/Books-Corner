@@ -1,0 +1,117 @@
+/* Sidebar Dark Navy Blue Theme */
+.sidebar {
+    width: 260px;
+    background-color: #0b1c2e; /* ডার্ক নেভি-ব্লু কালার */
+    color: #ffffff;
+    height: 100vh;
+    padding-top: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    font-weight: bold;
+    padding-bottom: 20px;
+    color: #ffffff; /* হেডারের কালার সাদা */
+    border-bottom: 1px solid #1a365d;
+    text-transform: uppercase;
+}
+
+#menuList {
+    list-style-type: none;
+    padding: 10px 15px;
+    margin: 0;
+}
+
+#menuList li {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+#menuList a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #d1d5db; /* সাধারণ মেনুর টেক্সট কালার */
+    text-decoration: none;
+    padding: 12px 15px;
+    font-size: 15px;
+    font-weight: 400;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+#menuList a:hover {
+    background-color: #1a365d; /* হোভার করলে হালকা নেভি-ব্লু */
+    color: #ffffff;
+}
+
+/* Active Menu (আগের মতোই পার্পেল থাকবে) */
+#menuList a.active {
+    background: linear-gradient(60deg, #ab47bc, #8e24aa);
+    color: #ffffff !important;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .2), 0 7px 10px -5px rgba(156, 39, 176, .4);
+}
+
+/* Dropdown Sub-menu */
+.sub-menu {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: none;
+}
+
+.has-dropdown.open .sub-menu {
+    display: block;
+}
+
+/* অ্যারো আইকনের সাইজ বড় করা হলো */
+.arrow {
+    font-size: 20px; /* আইকন বড় করা হয়েছে */
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+.has-dropdown.open .arrow {
+    transform: rotate(180deg);
+}
+
+.sub-menu li a {
+    padding: 10px 15px 10px 35px;
+    font-size: 14px;
+    color: #9ca3af;
+    background: transparent;
+    box-shadow: none;
+}
+
+.sub-menu li a:hover {
+    background-color: #112236;
+    color: #ffffff;
+}
+
+/* সাবমেনুর ব্যাকগ্রাউন্ড এবং বর্ডার ডিজাইন */
+.sub-menu {
+    background-color: #1e293b !important; /* মূল সাইডবার থেকে একটু আলাদা/হালকা কালার */
+    border-left: 3px solid #a855f7; /* বামদিকে একটি কালার বর্ডার, যাতে সহজে চোখে পড়ে */
+}
+
+/* সাবমেনুর ভেতরের লিংকগুলোকে ডানদিকে সরানো */
+.sidebar ul .sub-menu li a {
+    padding-left: 50px !important; /* টেক্সট কিছুটা ডানদিকে সরে আসবে */
+    font-size: 14px;
+    color: #cbd5e1;
+    transition: all 0.3s ease;
+}
+
+/* সাবমেনুতে মাউস নিলে (Hover) ইফেক্ট */
+.sidebar ul .sub-menu li a:hover {
+    background-color: #334155 !important; /* হোভার করলে ব্যাকগ্রাউন্ড আরেকটু হাইলাইট হবে */
+    color: #ffffff !important;
+    padding-left: 55px !important; /* হোভার করলে টেক্সট আরও একটু ডানদিকে মুভ করবে, যা দেখতে খুব সুন্দর লাগবে */
+}
+.account-actions{display:flex!important;gap:6px;padding:8px 15px!important;margin-top:28px!important;border-top:1px solid #243b53}.account-actions a{display:block!important;flex:1;padding:10px 5px!important;text-align:center!important;border-radius:5px;font-size:12px!important;color:#fff!important}.settings-action{background:#38bdf8!important}.logout-action{background:#dc2626!important}.account-actions a:hover{filter:brightness(1.1);transform:translateY(-1px)}

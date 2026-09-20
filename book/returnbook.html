@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Return</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <style>
+        .return-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .return-table th, .return-table td { padding: 10px 12px; border: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
+        .return-table th { background-color: #f9fafb; font-weight: 600; color: #111827; }
+        .return-table tr:nth-child(even) { background-color: #f9fafb; }
+        .return-input { width: 75px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h2 class="page-title">Return Books to Publisher</h2>
+
+        <div class="form-card" style="margin-bottom: 20px;">
+            <div class="form-grid" style="align-items: end;">
+                <div class="form-group">
+                    <label>Select Publisher</label>
+                    <select id="publisherSelect" style="padding: 10px; width: 300px;">
+                        <option value="">-- Choose Publisher --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card" id="returnSection" style="display: none;">
+            <div class="section-title">Available Received Books for Return</div>
+            <table class="return-table">
+                <thead>
+                    <tr>
+                        <th>Sl</th><th>Book Name</th><th>Writer</th><th>Part</th>
+                        <th>Rec. Qty</th><th>Ret. Qty</th><th>Rate (₹)</th><th>Amount</th><th>Dis %</th><th>G. Total</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="returnTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="../js/global.js"></script>
+    <script src="../js/returnbook.js"></script>
+</body>
+</html>
